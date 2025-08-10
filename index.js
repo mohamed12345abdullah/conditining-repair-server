@@ -23,8 +23,11 @@ const path = require("path");
 app.use("/",express.static(path.join(__dirname,"public")));
 
 const orderRouter = require("./routes/ordefRouter");
+const apartmentRoutes = require('./routes/apartmentRoutes');
 
+// API Routes
 app.use("/api/orders", orderRouter);
+app.use('/api/apartments', apartmentRoutes);
 
 
 

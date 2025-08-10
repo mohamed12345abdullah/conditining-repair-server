@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apartment Comparison</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .apartment-card {
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .apartment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .apartment-card.selected {
+            border: 2px solid #0d6efd;
+        }
+        .comparison-table th {
+            background-color: #f8f9fa;
+            position: sticky;
+            top: 0;
+        }
+        .feature-icon {
+            width: 24px;
+            text-align: center;
+            margin-right: 5px;
+            color: #0d6efd;
+        }
+        .filter-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .apartment-image {
+            height: 200px;
+            object-fit: cover;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <h1 class="text-center mb-4">Apartment Comparison Tool</h1>
+        
+        <!-- Filter Section -->
+        <div class="filter-section mb-4">
+            <h4><i class="fas fa-filter me-2"></i>Filter Apartments</h4>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Category</label>
+                    <select class="form-select" id="categoryFilter">
+                        <option value="">All Categories</option>
+                        <option value="economic">Economic</option>
+                        <option value="medium">Medium</option>
+                        <option value="luxury">Luxury</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Price Range</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="minPrice" placeholder="Min">
+                        <span class="input-group-text">to</span>
+                        <input type="number" class="form-control" id="maxPrice" placeholder="Max">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Rooms</label>
+                    <input type="number" class="form-control" id="roomsFilter" min="1" placeholder="Rooms">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Availability</label>
+                    <select class="form-select" id="availableFilter">
+                        <option value="">All</option>
+                        <option value="true">Available</option>
+                        <option value="false">Not Available</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" onclick="filterApartments()">
+                        <i class="fas fa-search me-2"></i>Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="row">
+            <!-- Apartment List -->
+            <div class="col-lg-8">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4>Available Apartments</h4>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addApartmentModal">
+                        <i class="fas fa-plus me-2"></i>Add Apartment
+                    </button>
+                </div>
+                <div class="row" id="apartmentsList">
+                    <!-- Apartments will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Comparison Section -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Comparison List</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="comparisonList">
+                            <p class="text-muted">Select up to 3 apartments to compare</p>
+                        </div>
+                        <button class="btn btn-primary w-100 mt-3" id="compareBtn" disabled>
+                            <i class="fas fa-exchange-alt me-2"></i>Compare Selected
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Apartment Modal -->
+    <div class="modal fade" id="addApartmentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Apartment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="apartmentForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Title</label>
+                                <input type="text" class="form-control" name="title" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Location</label>
+                                <input type="text" class="form-control" name="location" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Price</label>
+                                <input type="number" class="form-control" name="price" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Deposit</label>
+                                <input type="number" class="form-control" name="deposit">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Rooms</label>
+                                <input type="number" class="form-control" name="rooms" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Category</label>
+                                <select class="form-select" name="category" required>
+                                    <option value="economic">Economic</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="luxury">Luxury</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Average Consumption</label>
+                                <input type="number" class="form-control" name="consumption" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Features (comma separated)</label>
+                            <input type="text" class="form-control" name="features" placeholder="e.g., AC, Parking, Balcony">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Image URLs (one per line)</label>
+                            <textarea class="form-control" name="images" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" name="internet" id="internetCheck">
+                            <label class="form-check-label" for="internetCheck">Internet Available</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveApartment()">Save Apartment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Modal -->
+    <div class="modal fade" id="comparisonModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Apartment Comparison</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Feature</th>
+                                    <!-- Apartment headers will be added here -->
+                                </tr>
+                            </thead>
+                            <tbody id="comparisonTableBody">
+                                <!-- Comparison rows will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let apartments = [];
+        let selectedApartments = [];
+        const MAX_COMPARE = 3;
+
+        // Load apartments when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchApartments();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Add event listener for compare button
+            document.getElementById('compareBtn').addEventListener('click', showComparison);
+
+            // Add keyboard shortcut for filter (Ctrl + F)
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'f') {
+                    e.preventDefault();
+                    document.getElementById('categoryFilter').focus();
+                }
+            });
+        }
+
+        async function fetchApartments() {
+            try {
+                const response = await fetch('/api/apartments');
+                if (!response.ok) throw new Error('Failed to fetch apartments');
+                apartments = await response.json();
+                displayApartments(apartments);
+            } catch (error) {
+                console.error('Error fetching apartments:', error);
+                alert('Error loading apartments. Please try again later.');
+            }
+        }
+
+        function filterApartments() {
+            const category = document.getElementById('categoryFilter').value;
+            const minPrice = document.getElementById('minPrice').value;
+            const maxPrice = document.getElementById('maxPrice').value;
+            const rooms = document.getElementById('roomsFilter').value;
+            const available = document.getElementById('availableFilter').value;
+
+            let filtered = [...apartments];
+
+            if (category) {
+                filtered = filtered.filter(apt => apt.category === category);
+            }
+            if (minPrice) {
+                filtered = filtered.filter(apt => apt.price >= Number(minPrice));
+            }
+            if (maxPrice) {
+                filtered = filtered.filter(apt => apt.price <= Number(maxPrice));
+            }
+            if (rooms) {
+                filtered = filtered.filter(apt => apt.rooms >= Number(rooms));
+            }
+            if (available) {
+                filtered = filtered.filter(apt => apt.available.toString() === available);
+            }
+
+            displayApartments(filtered);
+        }
+
+        function displayApartments(apartmentsToShow) {
+            const container = document.getElementById('apartmentsList');
+            container.innerHTML = '';
+
+            if (apartmentsToShow.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center py-5"><p>No apartments found matching your criteria.</p></div>';
+                return;
+            }
+
+            apartmentsToShow.forEach(apartment => {
+                const isSelected = selectedApartments.some(apt => apt._id === apartment._id);
+                const cardDiv = document.createElement('div');
+                cardDiv.className = `card apartment-card ${isSelected ? 'selected' : ''}`;
+                cardDiv.dataset.id = apartment._id;
+
+                const imageSection = document.createElement('div');
+                if (apartment.images && apartment.images.length > 0) {
+                    const img = document.createElement('img');
+                    img.src = apartment.images[0];
+                    img.className = 'apartment-image';
+                    img.alt = apartment.title;
+                    imageSection.appendChild(img);
+                } else {
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'apartment-image bg-light d-flex align-items-center justify-content-center';
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-home fa-3x text-muted';
+                    placeholder.appendChild(icon);
+                    imageSection.appendChild(placeholder);
+                }
+
+                const cardBody = document.createElement('div');
+                cardBody.className = 'card-body';
+
+                const titleRow = document.createElement('div');
+                titleRow.className = 'd-flex justify-content-between align-items-start';
+
+                const title = document.createElement('h5');
+                title.className = 'card-title';
+                title.textContent = apartment.title;
+
+                const badge = document.createElement('span');
+                badge.className = `badge bg-${getCategoryBadgeClass(apartment.category)}`;
+                badge.textContent = apartment.category.charAt(0).toUpperCase() + apartment.category.slice(1);
+
+                titleRow.appendChild(title);
+                titleRow.appendChild(badge);
+
+                const location = document.createElement('p');
+                location.className = 'text-muted';
+                const locationIcon = document.createElement('i');
+                locationIcon.className = 'fas fa-map-marker-alt';
+                location.appendChild(locationIcon);
+                location.appendChild(document.createTextNode(' ' + apartment.location));
+
+                const priceRow = document.createElement('div');
+                priceRow.className = 'd-flex justify-content-between align-items-center mb-2';
+
+                const price = document.createElement('h6');
+                price.className = 'mb-0';
+                price.innerHTML = `$${apartment.price.toLocaleString()}<small class="text-muted">/month</small>`;
+
+                const rooms = document.createElement('span');
+                const roomIcon = document.createElement('i');
+                roomIcon.className = 'fas fa-door-open';
+                rooms.appendChild(roomIcon);
+                rooms.appendChild(document.createTextNode(` ${apartment.rooms} ${apartment.rooms === 1 ? 'Room' : 'Rooms'}`));
+
+                priceRow.appendChild(price);
+                priceRow.appendChild(rooms);
+
+                const featuresDiv = document.createElement('div');
+                featuresDiv.className = 'features mb-2';
+
+                if (apartment.features && apartment.features.length > 0) {
+                    apartment.features.slice(0, 3).forEach(feature => {
+                        const featureBadge = document.createElement('span');
+                        featureBadge.className = 'badge bg-light text-dark me-1 mb-1';
+                        featureBadge.textContent = feature;
+                        featuresDiv.appendChild(featureBadge);
+                    });
+
+                    if (apartment.features.length > 3) {
+                        const moreBadge = document.createElement('span');
+                        moreBadge.className = 'badge bg-light text-muted';
+                        moreBadge.textContent = `+${apartment.features.length - 3} more`;
+                        featuresDiv.appendChild(moreBadge);
+                    }
+                }
+
+                const compareBtn = document.createElement('button');
+                compareBtn.className = 'btn btn-outline-primary btn-sm w-100';
+                compareBtn.textContent = isSelected ? 'Remove from Comparison' : 'Add to Comparison';
+                compareBtn.onclick = (e) => toggleApartmentSelection(e, apartment._id);
+
+                cardBody.appendChild(titleRow);
+                cardBody.appendChild(location);
+                cardBody.appendChild(priceRow);
+                cardBody.appendChild(featuresDiv);
+                cardBody.appendChild(compareBtn);
+
+                cardDiv.appendChild(imageSection);
+                cardDiv.appendChild(cardBody);
+
+                const colDiv = document.createElement('div');
+                colDiv.className = `col-md-6 col-lg-4 ${isSelected ? 'selected' : ''}`;
+                colDiv.appendChild(cardDiv);
+                container.appendChild(colDiv);
+            });
+        }
+
+        function getCategoryBadgeClass(category) {
+            switch(category) {
+                case 'economic': return 'success';
+                case 'medium': return 'primary';
+                case 'luxury': return 'warning';
+                default: return 'secondary';
+            }
+        }
+
+        function toggleApartmentSelection(event, apartmentId) {
+            event.stopPropagation();
+            
+            const apartment = apartments.find(apt => apt._id === apartmentId);
+            if (!apartment) return;
+
+            const index = selectedApartments.findIndex(apt => apt._id === apartmentId);
+            
+            if (index === -1) {
+                if (selectedApartments.length >= MAX_COMPARE) {
+                    alert(`You can compare up to ${MAX_COMPARE} apartments at a time.`);
+                    return;
+                }
+                selectedApartments.push(apartment);
+            } else {
+                selectedApartments.splice(index, 1);
+            }
+
+            updateComparisonList();
+            updateApartmentCards();
+        }
+
+        function updateComparisonList() {
+            const container = document.getElementById('comparisonList');
+            const compareBtn = document.getElementById('compareBtn');
+            
+            if (selectedApartments.length === 0) {
+                container.innerHTML = '<p class="text-muted">Select up to 3 apartments to compare</p>';
+                compareBtn.disabled = true;
+                return;
+            }
+
+            let html = '<div class="list-group">';
+            selectedApartments.forEach(apartment => {
+                html += `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>${apartment.title}</span>
+                        <button class="btn btn-sm btn-outline-danger" 
+                                onclick="removeFromComparison('${apartment._id}')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+            compareBtn.disabled = selectedApartments.length < 2;
+        }
+
+        function updateApartmentCards() {
+            document.querySelectorAll('.apartment-card').forEach(card => {
+                const apartmentId = card.dataset.id;
+                const isSelected = selectedApartments.some(apt => apt._id === apartmentId);
+                
+                if (isSelected) {
+                    card.classList.add('selected');
+                    const button = card.querySelector('button');
+                    if (button) {
+                        button.textContent = 'Remove from Comparison';
+                        button.classList.remove('btn-outline-primary');
+                        button.classList.add('btn-outline-danger');
+                    }
+                } else {
+                    card.classList.remove('selected');
+                    const button = card.querySelector('button');
+                    if (button) {
+                        button.textContent = 'Add to Comparison';
+                        button.classList.remove('btn-outline-danger');
+                        button.classList.add('btn-outline-primary');
+                    }
+                }
+            });
+        }
+
+        function removeFromComparison(apartmentId) {
+            selectedApartments = selectedApartments.filter(apt => apt._id !== apartmentId);
+            updateComparisonList();
+            updateApartmentCards();
+        }
+
+        function showComparison() {
+            if (selectedApartments.length < 2) {
+                alert('Please select at least 2 apartments to compare');
+                return;
+            }
+
+            const tableBody = document.getElementById('comparisonTableBody');
+            const thead = document.querySelector('#comparisonModal thead tr');
+            
+            // Clear existing content
+            thead.innerHTML = '<th>Feature</th>';
+            tableBody.innerHTML = '';
+
+            // Add apartment headers
+            selectedApartments.forEach(apartment => {
+                thead.innerHTML += `<th>${apartment.title}</th>`;
+            });
+
+            // Add comparison rows
+            addComparisonRow('Price', 'price', 'currency');
+            addComparisonRow('Location', 'location');
+            addComparisonRow('Rooms', 'rooms');
+            addComparisonRow('Category', 'category');
+            addComparisonRow('Deposit', 'deposit', 'currency');
+            addComparisonRow('Internet', 'internet', 'boolean');
+            addComparisonRow('Available', 'available', 'boolean');
+            addComparisonRow('Features', 'features', 'list');
+
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('comparisonModal'));
+            modal.show();
+
+            function addComparisonRow(label, property, type = 'text') {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td><strong>${label}</strong></td>`;
+                
+                selectedApartments.forEach(apartment => {
+                    let value = apartment[property];
+                    let displayValue = '';
+
+                    if (value === undefined || value === null) {
+                        displayValue = '-';
+                    } else if (type === 'currency' && !isNaN(value)) {
+                        displayValue = `$${Number(value).toLocaleString()}`;
+                    } else if (type === 'boolean') {
+                        displayValue = value ? 
+                            '<span class="text-success"><i class="fas fa-check"></i> Yes</span>' : 
+                            '<span class="text-danger"><i class="fas fa-times"></i> No</span>';
+                    } else if (type === 'list' && Array.isArray(value)) {
+                        displayValue = value.length > 0 ? 
+                            `<ul class="mb-0">${value.map(item => `<li>${item}</li>`).join('')}</ul>` : '-';
+                    } else {
+                        displayValue = value || '-';
+                    }
+
+                    row.innerHTML += `<td>${displayValue}</td>`;
+                });
+
+                tableBody.appendChild(row);
+            }
+        }
+
+        async function saveApartment() {
+            const form = document.getElementById('apartmentForm');
+            const formData = new FormData(form);
+            
+            const apartmentData = {
+                title: formData.get('title'),
+                location: formData.get('location'),
+                price: Number(formData.get('price')),
+                deposit: formData.get('deposit') ? Number(formData.get('deposit')) : 0,
+                rooms: Number(formData.get('rooms')),
+                category: formData.get('category'),
+                consumption: Number(formData.get('consumption')),
+                features: formData.get('features') ? 
+                    formData.get('features').split(',').map(f => f.trim()).filter(Boolean) : [],
+                description: formData.get('description'),
+                images: formData.get('images') ? 
+                    formData.get('images').split('\n').map(url => url.trim()).filter(Boolean) : [],
+                internet: document.getElementById('internetCheck').checked,
+                available: true
+            };
+
+            try {
+                const response = await fetch('/api/apartments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(apartmentData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to save apartment');
+                }
+
+                const newApartment = await response.json();
+                apartments.push(newApartment);
+                
+                // Reset form and close modal
+                form.reset();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addApartmentModal'));
+                modal.hide();
+                
+                // Show success message and refresh the list
+                alert('Apartment added successfully!');
+                filterApartments();
+                
+            } catch (error) {
+                console.error('Error saving apartment:', error);
+                alert(`Error: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>
